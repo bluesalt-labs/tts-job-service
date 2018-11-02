@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Helpers;
+
+use Aws\S3\S3Client;
+
+class S3Storage
+{
+    const S3_VERSION = 'latest';
+
+    protected $s3;
+    protected $bucket;
+
+    /**
+     * S3Storage constructor.
+     */
+    public function __construct() {
+        $this->bucket = env('AWS_BUCKET');
+        $this->s3 = static::getS3Client();
+
+        var_dump($this->s3->getObjectUrl($this->bucket, 'payment_gateway_data.json'));die;
+    }
+
+    /**
+     * @return S3Client
+     */
+    private static function getS3Client() {
+        $credentials = [
+            'version'   => static::S3_VERSION,
+            'region'    => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'credentials' => [
+                'key'         => env('AWS_ACCESS_KEY_ID'),
+                'secret'      => env('AWS_SECRET_ACCESS_KEY'),
+            ],
+        ];
+
+        return new S3Client($credentials);
+    }
+
+
+    public function getUrl($filepath) {
+        return $this->s3->getObjectUrl($this->bucket, $filepath);
+    }
+
+
+    public function get($filepath) {
+        $object = $this->s3->getObject([
+            'Bucket'    => $this->bucket,
+            'Key'       => $filepath,
+        ]);
+
+
+        // todo: see https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-s3-2006-03-01.html#getobject
+        return $object;
+    }
+
+    public function put($filepath) {
+        // todo
+        /*
+        $localImage = '/Users/jim/Photos/summer-vacation/DP00342654.jpg';
+        $s3->putObject(array(
+        'Bucket'     => 'my-uniquely-named-bucket',
+        'SourceFile' => $localImage,
+        'Key'        => 'photos/summer/' . basename($localImage)
+         */
+
+        $object = $this->s3->putObject([
+            'Bucket'    => $this->bucket,
+            //'SourceFile' || 'Body'    => ''
+            'Key'       => $filepath,
+        ]);
+
+        return $object;
+    }
+
+    public function delete($filepath) {
+        $object = $this->s3->deleteObject([
+            'Bucket'    => $this->bucket,
+            'Key'       => $filepath,
+        ]);
+
+        return !!$object['DeleteMarker'];
+    }
+
+}
