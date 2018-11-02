@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
 class ApiController extends Controller
 {
     /**
@@ -24,18 +26,19 @@ class ApiController extends Controller
     }
 
     /**
-     * Submit a new job request
+     * Submit a new job request.
      *
+     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function submitJobRequest() {
-        $output = []; // todo
-
-
+    public function submitJobRequest(Request $request) {
+        $output = [
+            "text"      => $request->get('text'),
+            "voices"    => $request->get('voices'),
+        ]; // todo
 
         return response()->json($output);
     }
-
 
     /**
      * Get the status of a job by jobID
@@ -44,7 +47,9 @@ class ApiController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function getJobStatus($jobID) {
-        $output = []; // todo
+        $output = [
+            'job_id'    => $jobID
+        ]; // todo
 
 
 
