@@ -91,17 +91,29 @@ class TTSItemController extends Controller
     }
 
     /**
-     * Get the status of a job by jobID
+     * Get the status of a TTSItem by itemID
      *
-     * @param $jobID
+     * @param $itemID
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getJobStatus($jobID) {
+    public function getItemStatus($itemID) {
         $output = [
-            'job_id'    => $jobID
-        ]; // todo
+            'item_id'       => null,
+            'job_id'        => null,
+            'item_status'   => null,
+            'job_status'    => null,
+            'messages'      => [],
+        ];
 
+        $item = TTSItem::find($itemID);
 
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        $output['item_id']      = $item->id;
+        $output['item_status']  = $item->status;
 
         return response()->json($output);
     }
