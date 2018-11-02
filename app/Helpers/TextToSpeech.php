@@ -17,7 +17,11 @@ class TextToSpeech
     const MAX_REQUEST_CHARS     = 3000;
     const TEXT_TYPE_DEFAULT     = 'ssml';
     const TEXT_TYPE_SSML        = 'ssml';
+
     const OUTPUT_FORMAT_DEFAULT = 'mp3';
+    const OUTPUT_FORMAT_MP3     = 'mp3';
+    const OUTPUT_FORMAT_OGG     = 'ogg_vorbis';
+    const OUTPUT_FORMAT_PCM     = 'pcm';
 
     protected $polly;
     protected $availableVoices;
@@ -49,10 +53,7 @@ class TextToSpeech
             return []; // temp
         }
 
-        // Convert text to SSML if that's the requested TextType
-        if($options['TextType'] === static::TEXT_TYPE_SSML) {
-            $options['Text'] = $this->textToSSML( $options['Text'] );
-        }
+        $options['Text'] = $this->textToSSML( $options['Text'] );
 
         return $this->polly->synthesizeSpeech($options)->toArray(); // todo don't return as array?
     }
@@ -103,13 +104,28 @@ class TextToSpeech
     }
 
     /**
+     * Get all audio output formats
+     *
+     * @return array
+     */
+    public static function getOutputFormats() {
+        return [
+            // polly format => file extension
+            static::OUTPUT_FORMAT_DEFAULT   => 'mp3',
+            static::OUTPUT_FORMAT_MP3       => 'mp3',
+            static::OUTPUT_FORMAT_OGG       => 'ogg',
+            static::OUTPUT_FORMAT_PCM       => 'pcm',
+        ];
+    }
+
+    /**
      * Strips input string of HTML, extra whitespace, etc.
      *
      * @param $text
      * @return string
      */
     public static function cleanString($text) {
-        return strip_tags( preg_replace(["/:|<\/(li|p)>/", "/&#?[a-z0-9]+;/i", "\s"], [",", '', ' '], trim($text)) );
+        return strip_tags( preg_replace(["/:|<\/(li|p)>/", "/&#?[a-z0-9]+;/i", "/\s/"], [",", '', ' '], trim($text)) );
     }
 
     /**
