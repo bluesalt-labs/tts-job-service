@@ -80,7 +80,7 @@ class TTSItemController extends Controller
                 $ttsItem->setItemText($text);
                 $ttsItem->save();
 
-                $output['items'][] = $ttsItem->toArray(); // todo: get visible attributes.
+                $output['items'][] = $ttsItem->toArray(); // todo: set visible attributes?
                 $this->dispatch( new TTSJob($ttsItem) );
             }
 
@@ -102,9 +102,13 @@ class TTSItemController extends Controller
             'job_id'        => null,
             'item_status'   => null,
             'job_status'    => null,
+            'text'          => null,
             'messages'      => [],
         ];
 
+        /**
+         * @var TTSItem $item
+         */
         $item = TTSItem::find($itemID);
 
         if(!$item) {
@@ -114,6 +118,7 @@ class TTSItemController extends Controller
 
         $output['item_id']      = $item->id;
         $output['item_status']  = $item->status;
+        $output['text']         = $item->getItemText();
 
         return response()->json($output);
     }

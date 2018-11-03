@@ -25,6 +25,10 @@ class TTSItem extends Model
         parent::boot();
 
         static::creating(function(TTSItem $ttsItem) {
+            $ttsItem->generateUniqueID();
+        });
+
+        static::saving(function(TTSItem $ttsItem) {
             $ttsItem->generateTextFilePath();
             $ttsItem->generateAudioFilePath();
         });
@@ -78,9 +82,14 @@ class TTSItem extends Model
     }
 
     public function getTextFileAttribute() {
-        if(!$this->attributes['text_file']) {
-            $this->generateTextFilePath();
-        }
+        $this->generateTextFilePath();
+        return $this->attributes['text_file'];
+
+    }
+
+    public function getUniqueIdAttribute() {
+        $this->generateUniqueID();
+        return $this->attributes['unique_id'];
     }
 
     /**
@@ -89,14 +98,11 @@ class TTSItem extends Model
      * @param $text
      */
     public function setItemText($text) {
-        $this->generateTextFilePath();
-
-        // todo: create or update file and set the file's text
-        // S3Storage::create();
-        $this->text_file = '';
+        $s3 = new S3Storage();
+        $s3->put($this->text_file, $text);
     }
 
-    public function setItemTextFileAttribute($filepath) {
+    public function setTextFileAttribute($filepath) {
         // todo?
         $this->attributes['text_file'] = $filepath;
     }
@@ -104,10 +110,11 @@ class TTSItem extends Model
     /**
      * Get the contents of this TTSItem's text_file
      *
-     * @return string
+     * @return string|null
      */
     public function getItemText() {
-        // todo
+        $s3 = new S3Storage();
+        return $s3->getBody($this->text_file);
     }
 
     /**
@@ -141,7 +148,9 @@ class TTSItem extends Model
             !array_key_exists('text_file', $this->attributes) ||
             !$this->attributes['text_file']
         ) {
-            $this->attributes['text_file'] = ''; // todo
+            $path = 'text/'.$this->unique_id;
+
+            $this->attributes['text_file'] = $path.'.txt';
         }
     }
 
@@ -155,11 +164,28 @@ class TTSItem extends Model
             !array_key_exists('audio_file', $this->attributes) ||
             !$this->attributes['audio_file']
         ) {
-            $this->attributes['audio_file'] = ''; // todo
+            $path = 'audio/'.$this->unique_id;
+
+            $this->attributes['audio_file'] = $path.'.'.$this->output_format;
         }
     }
 
-    private static function generateRandomName() {
+    private function generateUniqueID() {
+        if( !array_key_exists('unique_id', $this->attributes) ||
+            !$this->attributes['unique_id']
+        ) {
+            $uniqueID = '';
+            $pool = array_merge(range(0, 9), range('a', 'z'), range('A', 'Z'));
+
+            for($i = 0; $i < 16; $i++) {
+                $uniqueID .= $pool[mt_rand(0, count($pool) - 1)];
+            }
+
+            $this->attributes['unique_id'] = $uniqueID;
+        }
+    }
+
+    private function generateRandomName() {
 
     }
 

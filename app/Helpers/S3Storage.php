@@ -17,8 +17,6 @@ class S3Storage
     public function __construct() {
         $this->bucket = env('AWS_BUCKET');
         $this->s3 = static::getS3Client();
-
-        var_dump($this->s3->getObjectUrl($this->bucket, 'payment_gateway_data.json'));die;
     }
 
     /**
@@ -49,12 +47,46 @@ class S3Storage
             'Key'       => $filepath,
         ]);
 
-
         // todo: see https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-s3-2006-03-01.html#getobject
         return $object;
     }
 
-    public function put($filepath) {
+
+    public function getBody($filepath) {
+        $object = $this->get($filepath);
+
+        if($object) {
+            return $object['Body']->getContents();
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     *
+     * @param string $localPath
+     * @param string $remotePath
+     * @return \Aws\Result
+     */
+    public function putFile($localPath, $remotePath) {
+        $object = $this->s3->putObject([
+            'Bucket'        => $this->bucket,
+            'SourceFile'    => $localPath,
+            'Key'           => $remotePath,
+        ]);
+
+        return $object; // todo
+    }
+
+    /**
+     *
+     *
+     * @param $remotePath
+     * @param string | resource | \Psr\Http\Message\StreamInterface $fileData
+     * @return \Aws\Result
+     */
+    public function put($remotePath, $fileData) {
         // todo
         /*
         $localImage = '/Users/jim/Photos/summer-vacation/DP00342654.jpg';
@@ -66,17 +98,17 @@ class S3Storage
 
         $object = $this->s3->putObject([
             'Bucket'    => $this->bucket,
-            //'SourceFile' || 'Body'    => ''
-            'Key'       => $filepath,
+            'Body'      => $fileData,
+            'Key'       => $remotePath,
         ]);
 
         return $object;
     }
 
-    public function delete($filepath) {
+    public function delete($remotePath) {
         $object = $this->s3->deleteObject([
             'Bucket'    => $this->bucket,
-            'Key'       => $filepath,
+            'Key'       => $remotePath,
         ]);
 
         return !!$object['DeleteMarker'];

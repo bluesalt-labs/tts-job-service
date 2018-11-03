@@ -15,6 +15,7 @@ class CreateTtsItemsTable extends Migration
     {
         Schema::create('tts_items', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('unique_id');
             $table->timestamps();
             $table->string('name')->nullable();
             $table->string('user_id')->nullable();
