@@ -19,4 +19,5 @@ $router->get('/', function() use ($router){
 $router->group([], function() use ($router) {
     $router->post('submit-job-request', 'TTSItemController@submitJobRequest');
     $router->get('get-item-status/{item_id}', 'TTSItemController@getItemStatus');
+    $router->delete('delete-item/{item_id}', 'TTSItemController@deleteItem');
 });

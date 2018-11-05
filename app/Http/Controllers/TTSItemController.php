@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\TextToSpeech;
-use App\Jobs\TTSJob;
 use App\Models\TTSItem;
 use Illuminate\Http\Request;
 
@@ -18,13 +16,6 @@ class TTSItemController extends Controller
     {
         //
     }
-
-    /**
-     * Index page. Shows the application name.
-     *
-     * @return string
-     */
-
 
     /**
      * Submit a new job request.
@@ -43,6 +34,7 @@ class TTSItemController extends Controller
         $voices     = $request->get('voices');
         $name       = $request->get('name');
         $outFormat  = $request->get('output_format');
+        $user       = $request->user;
 
         if(!$text) {
             $output['messages'][] = "Required 'text' attribute is invalid or not present.";
@@ -58,33 +50,16 @@ class TTSItemController extends Controller
         }
 
         if($text && $voices) {
-            $tts  = new TextToSpeech();
-            $text = TextToSpeech::cleanString($text);
+            $createItemsResponse = TTSItem::createItems($text, $voices, $outFormat, $name, $user);
 
-            foreach($voices as $voice) {
-                // todo: should this be in the model? :
-                $voiceID = $tts->getVoiceNameByKey( intval($voice) );
-
-                if(!$voiceID) {
-                    $output['messages'][] = "Voice '$voice' is invalid.";
-                    break;
-                }
-
-                $ttsItem = new TTSItem([
-                    'name'          => $name,
-                    'status'        => TTSItem::STATUS_DEFAULT,
-                    'voice_id'      => $voiceID,
-                    'output_format' => $outFormat,
-                ]);
-
-                $ttsItem->setItemText($text);
-                $ttsItem->save();
-
-                $output['items'][] = $ttsItem->toArray(); // todo: set visible attributes?
-                $this->dispatch( new TTSJob($ttsItem) );
+            if(sizeof($createItemsResponse['items'] > 0)) {
+                $output['success']  = true;
+                $output['items']    = $createItemsResponse['items'];
             }
 
-            $output['success'] = true;
+            foreach($createItemsResponse['messages'] as $message) {
+                $output['messages'][] = $message;
+            }
         }
 
         return response()->json($output);
@@ -99,10 +74,12 @@ class TTSItemController extends Controller
     public function getItemStatus($itemID) {
         $output = [
             'item_id'       => null,
-            'job_id'        => null,
+            'unique_id'     => null,
+            'name'          => null,
             'item_status'   => null,
             'job_status'    => null,
             'text'          => null,
+            'audio_url'     => null,
             'messages'      => [],
         ];
 
@@ -117,8 +94,35 @@ class TTSItemController extends Controller
         }
 
         $output['item_id']      = $item->id;
+        $output['unique_id']    = $item->unique_id;
         $output['item_status']  = $item->status;
+        $output['job_status']   = null; // todo
         $output['text']         = $item->getItemText();
+        $output['audio_url']    = $item->audio_file;
+        $output['messages']     = null; // todo
+
+        return response()->json($output);
+    }
+
+    public function deleteItem($itemID) {
+        $output = [
+            'success'   => false,
+            'messages'  => [],
+        ];
+
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
+
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        try {
+            $output['success'] = $item->delete();
+        } catch (\Exception $e) {
+            $output['success'] = false;
+            $output['messages'][] = $e->getMessage();
+        }
 
         return response()->json($output);
     }

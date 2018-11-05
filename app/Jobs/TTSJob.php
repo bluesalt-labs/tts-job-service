@@ -26,4 +26,5 @@ class TTSJob extends Job
     public function handle() {
         $this->ttsItem->generateAudio();
     }
+
 }
