@@ -53,6 +53,8 @@ class TextToSpeech
 
         $options['Text'] = $this->textToSSML( $options['Text'] );
 
+        //\Illuminate\Support\Facades\Log::debug($options['Text']);
+
         return $this->polly->synthesizeSpeech($options)->toArray(); // todo don't return as array?
     }
 
@@ -230,6 +232,7 @@ class TextToSpeech
         // todo: check out $this->polly->getLexicon()
 
         return [
+            " & "           => ' and ',
             "("             => '<s>(',
             ")"             => ')</s>',
             ")</s>."        => ')</s>',

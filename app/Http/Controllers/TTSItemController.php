@@ -64,6 +64,27 @@ class TTSItemController extends Controller
         return response()->json($output);
     }
 
+    public function regenerateItem($itemID) {
+        $output = [
+            'success'   => false,
+            'messages'  => [],
+        ];
+
+        /**
+         * @var TTSItem $item
+         */
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
+
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        $output['success'] = $item->regenerateAudio();
+
+        return response()->json($output);
+    }
+
     /**
      * Get the status of a TTSItem by itemID
      *
@@ -94,6 +115,7 @@ class TTSItemController extends Controller
 
         $output['item_id']      = $item->id;
         $output['unique_id']    = $item->unique_id;
+        $output['name']         = $item->name;
         $output['status']       = $item->status;
         $output['text']         = $item->getItemText();
         $output['audio_url']    = $item->audio_file;

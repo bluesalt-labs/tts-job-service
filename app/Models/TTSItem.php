@@ -5,11 +5,9 @@ namespace App\Models;
 use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
 use App\Jobs\TTSJob;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TTSItem extends Model
 {
@@ -109,6 +107,35 @@ class TTSItem extends Model
         }
 
         return $output;
+    }
+
+    /**
+     * Regenerate the text to speech audio from the still cached text file.
+     */
+    public function regenerateAudio() {
+        $s3 = new S3Storage();
+
+        $textFilePath   = (
+        array_key_exists('text_file', $this->attributes) ?
+            $this->attributes['text_file'] : null
+        );
+
+        if(!$textFilePath || !$s3->exists($textFilePath)) {
+            return false;
+        }
+
+        $audioFilePath  = (
+        array_key_exists('audio_file', $this->attributes) ?
+            $this->attributes['audio_file'] : null
+        );
+
+        // todo: Should we not do this?
+        if($audioFilePath) { $s3->delete($audioFilePath); }
+
+        $job = ( new TTSJob($this) )->delay(10);
+        dispatch($job);
+
+        return true;
     }
 
     /**
@@ -299,8 +326,8 @@ class TTSItem extends Model
     public function generateAudio() {
         $this->setStatusAndMessage('Generate Audio started.', 'info');
 
-        // if the audio is currently generating or already generated, return response
-        if($this->status !== static::STATUS_DEFAULT && $this->status !== static::STATUS_PENDING) {
+        // if the audio is currently generating, return response
+        if($this->status === static::STATUS_PENDING) {
             $this->setStatusAndMessage(
                 "Could not generate audio: status is '".$this->status."'",
                 'warning'
@@ -366,6 +393,13 @@ class TTSItem extends Model
                     'error',
                     static::STATUS_FAILED
                 );
+
+                // Log text that was sent in the request.
+                $this->setStatusAndMessage(
+                    $requestString,
+                    'debug'
+                );
+
                 return false;
             }
         }

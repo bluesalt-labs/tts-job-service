@@ -39,6 +39,9 @@ class S3Storage
         return $this->s3->registerStreamWrapper();
     }
 
+    public function exists($filepath) {
+        return $this->s3->doesObjectExist( env('AWS_BUCKET'), $filepath);
+    }
 
     public function getUrl($filepath) {
         return $this->s3->getObjectUrl($this->bucket, $filepath);
