@@ -95,11 +95,10 @@ class TTSItemController extends Controller
 
         $output['item_id']      = $item->id;
         $output['unique_id']    = $item->unique_id;
-        $output['item_status']  = $item->status;
-        $output['job_status']   = null; // todo
+        $output['status']       = $item->status;
         $output['text']         = $item->getItemText();
         $output['audio_url']    = $item->audio_file;
-        $output['messages']     = null; // todo
+        $output['messages']     = array_merge($output['messages'], explode("\n", $item->status_message));
 
         return response()->json($output);
     }

@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Aws\Polly\PollyClient;
+use http\Exception\InvalidArgumentException;
 
 /**
  * Class TextToSpeech
@@ -42,15 +43,12 @@ class TextToSpeech
      * @return array
      */
     public function sendRequest($text, $voiceKey, $options = []) {
-        $options['Text']    = static::cleanString($text);
-        $options['VoiceId'] = static::getVoiceNameByKey($voiceKey);
-
-        $options = static::validateRequestOptions($options);
+        $options = static::getRequestOptions($text, $voiceKey, $options);
 
         // If the options are invalid, end execution and return an error
         // todo: figure out how I want to do this.
-        if(!gettype($options) === 'array') {
-            return []; // temp
+        if(gettype($options) !== 'array') {
+            throw new InvalidArgumentException("Required parameters are missing or invalid");
         }
 
         $options['Text'] = $this->textToSSML( $options['Text'] );
@@ -63,25 +61,25 @@ class TextToSpeech
      * Sets default values for optional missing parameters.
      * Returns null if required attributes are missing.
      *
+     * @param string $text
+     * @param string $voiceKey
      * @param array $options
      * @return array|null
      */
-    public static function validateRequestOptions($options) {
+    public static function getRequestOptions($text, $voiceKey, $options) {
         // Check for required parameters
-        if( !array_key_exists('Text', $options) ||
-            !array_key_exists('VoiceId', $options) ||
-            !$options['Text'] ||
-            !$options['VoiceId']
+        if( !strlen($text) >  0 ||
+            !strlen($voiceKey) > 0 // todo: actually validate voice key?
         ) { return null; }
 
         $outputFormat = (array_key_exists('OutputFormat', $options) ? $options['OutputFormat'] : static::OUTPUT_FORMAT_DEFAULT);
         $textType     = (array_key_exists('TextType', $options) ? $options['TextType'] : static::TEXT_TYPE_DEFAULT);
 
         $output = [
-            'Text'          => $options['Text'],
+            'Text'          => $text,
             'OutputFormat'  => $outputFormat,
             'TextType'      => $textType,
-            'VoiceId'       => $options['VoiceId'],
+            'VoiceId'       => $voiceKey,
         ];
 
         return $output;
@@ -129,6 +127,39 @@ class TextToSpeech
     }
 
     /**
+     * Splits a string of text into MAX_REQUEST_CHARS sized chunks.
+     *
+     * @param string $cleanText
+     * @return array
+     */
+    public static function getTextRequestParts($cleanText) {
+        $output = [];
+        $textBuffer = '';
+
+        // Convert all white space to a single space character
+        $cleanText = preg_replace('/\s+/', ' ', $cleanText);
+
+        // Split input by sentences
+        $textParts = explode('. ', $cleanText);
+
+        for($i = count($textParts); $i >= 0; $i--) {
+            // Get the first sentence from the array
+            $part = array_shift($textParts).'. ';
+
+            // If the text buffer isn't full or almost full, add the sentence to the text buffer
+            if( (strlen($textBuffer) + strlen($part)) < static::MAX_REQUEST_CHARS) {
+                $textBuffer .= $part;
+            } else {
+                // If the text buffer if full, add it to the output and clear it.
+                $output[]   = $textBuffer;
+                $textBuffer = $part;
+            }
+        }
+
+        return $output;
+    }
+
+    /**
      * Adds SSML replacements to clean request text string.
      *
      * @param string $text
@@ -141,11 +172,17 @@ class TextToSpeech
             $cleanString = str_replace($acronym, $replacement, $cleanString);
         }
 
-        return "'<speak><amazon:auto-breaths duration=\"short\">".$cleanString."</amazon:auto-breaths></speak>'";
+        return '<speak><amazon:auto-breaths duration="short">'.$cleanString.'</amazon:auto-breaths></speak>';
     }
 
+    /**
+     * Determine if a string is too long for a single request.
+     *
+     * @param string $text
+     * @return bool
+     */
     public static function isTextTooLong($text) {
-        return !!(sizeof($text) > static::MAX_REQUEST_CHARS);
+        return !!(strlen($text) > static::MAX_REQUEST_CHARS);
     }
 
     /**

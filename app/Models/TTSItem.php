@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
 use App\Jobs\TTSJob;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
 class TTSItem extends Model
@@ -215,26 +217,6 @@ class TTSItem extends Model
     }
 
     /**
-     * Generate the audio file for this item.
-     *
-     * @return bool
-     */
-    public function generateAudio() {
-        // if the audio is already generated, return response
-        $this->status = static::STATUS_PENDING;
-        // get the contents of the text file
-
-
-        // set the status to static::STATUS_PROCESSED if audio generation was successful.
-        // return true;
-        // OR
-        // set the status to static::STATUS_FAILED if audio generation was not successful.
-        $this->status = static::STATUS_FAILED;
-
-        return $this->save();
-    }
-
-    /**
      * Generate the text file path for this model.
      *
      * @param bool $force
@@ -260,10 +242,22 @@ class TTSItem extends Model
             !array_key_exists('audio_file', $this->attributes) ||
             !$this->attributes['audio_file']
         ) {
-            $path = 'audio/'.$this->unique_id;
-
-            $this->attributes['audio_file'] = $path.'.'.$this->output_format;
+            $this->attributes['audio_file'] = 'audio/'.$this->unique_id.'.'.$this->output_format;
         }
+    }
+
+    /**
+     * Get a cache audio file key for this model.
+     *
+     * @param int|null $partIndex
+     * @return string
+     */
+    private function getAudioCacheFilePath($partIndex = null) {
+        // Make sure the audio output file path exists
+        $this->generateAudioFilePath();
+
+        $filename = ($partIndex !== null ? intval($partIndex) : 'combined').'.'.$this->output_format;
+        return 'audio/cache/'.$this->unique_id.'/'.$filename;
     }
 
     /**
@@ -291,6 +285,189 @@ class TTSItem extends Model
                 $this->attributes['unique_id'] = $uniqueID;
             }
         }
+    }
+
+    /**
+     * Generate the audio file for this item.
+     *
+     * @return bool
+     */
+    public function generateAudio() {
+        $this->setStatusAndMessage('Generate Audio started.', 'info');
+
+        // if the audio is currently generating or already generated, return response
+        if($this->status !== static::STATUS_DEFAULT && $this->status !== static::STATUS_PENDING) {
+            $this->setStatusAndMessage(
+                "Could not generate audio: status is '".$this->status."'",
+                'warning'
+            );
+            return false;
+        }
+
+        // Set this item's status to pending
+        $this->setStatusAndMessage(null, 'info', static::STATUS_PENDING);
+
+        // get the contents of the text file
+        $text = $this->getItemText();
+
+        // Fail if text string is empty
+        if( !(strlen($text) > 0) ) {
+            $this->setStatusAndMessage(
+                'Item text is empty',
+                'error',
+                static::STATUS_FAILED
+            );
+            return false;
+        }
+
+        // Split the text into single request size parts
+        $textParts = TextToSpeech::getTextRequestParts($text);
+
+        // Fail if an empty array was retrieved
+        if( !(sizeof($textParts) > 0) ) {
+            $this->setStatusAndMessage(
+                'Item text could not be split.',
+                'error',
+                static::STATUS_FAILED
+            );
+            return false;
+        }
+
+        // Process the text parts
+        $tts = new TextToSpeech();
+        $cacheFiles = [];
+
+
+        // Generate and cache all the audio file parts.
+        foreach($textParts as $key => $requestString) {
+            try {
+                $this->setStatusAndMessage('Sending Polly request.', 'info');
+                $ttsRequestData = $tts->sendRequest($requestString, $this->voice_id);
+                $this->setStatusAndMessage('Polly request sent.', 'info');
+
+                $audioFileKey = $this->getAudioCacheFilePath($key);
+
+                $this->setStatusAndMessage('Storing audio file '.$key, 'info');
+                $stored = Storage::disk('local')->put($audioFileKey, $ttsRequestData['AudioStream']);
+                $this->setStatusAndMessage(
+                    'Audio file '.$key.' storage '.($stored ? 'success.' : 'failure!'),
+                    ($stored ? 'info' : 'error')
+                );
+
+                $cacheFiles[] = $audioFileKey;
+            } catch(\Exception $e) {
+                // Log error and return if sending request fails.
+                $this->setStatusAndMessage(
+                    $e->getMessage(),
+                    'error',
+                    static::STATUS_FAILED
+                );
+                return false;
+            }
+        }
+
+        $tempOutputPath = $this->getAudioCacheFilePath();
+        $tempOutputFullPath = storage_path('app/'.$tempOutputPath);
+
+        // Combine the cached audio files, or rename if there's only 1 file.
+        if(sizeof($cacheFiles) === 1) {
+            Storage::disk('local')->move( $cacheFiles[0], $tempOutputPath);
+        } else {
+            // get full filename paths
+            $fullPathCacheFiles = [];
+            foreach($cacheFiles as $path) {
+                $fullPathCacheFiles[] = storage_path('app/'.$path);
+            }
+
+            // Combine the files.
+            exec('cat '.implode(' ', $fullPathCacheFiles).' > '. $tempOutputFullPath);
+        }
+
+        // Return error if temp output file does not exist.
+        if( !Storage::disk('local')->exists($tempOutputPath) ) {
+            $this->setStatusAndMessage(
+                "Could not store output file to '$tempOutputPath'.",
+                'error',
+                static::STATUS_FAILED
+            );
+            return false;
+        }
+
+        // Delete audio cache files if they still exist
+        if(sizeof($cacheFiles) === 1) {
+            $this->setStatusAndMessage('Deleting cached audio file parts.', 'info');
+            Storage::disk('local')->delete($cacheFiles);
+        }
+
+        // Move cache file to s3.
+        $this->setStatusAndMessage('Moving output file to s3.', 'info');
+        $s3 = new S3Storage();
+        $s3->putFile($tempOutputFullPath, $this->audio_file, true);
+
+        // todo: try/catch? make sure file was uploaded
+
+        $this->setStatusAndMessage('Output file moved.', 'info');
+        $this->setStatusAndMessage("Deleting local output cache directory (".dirname($tempOutputPath).").", 'info');
+        Storage::disk('local')->deleteDirectory( dirname($tempOutputPath) );
+
+        // hold off on combining audio until specific api request made?
+
+        $this->setStatusAndMessage(
+            'Done',
+            'info',
+            static::STATUS_PROCESSED,
+            false
+        );
+
+        return true;
+    }
+
+
+    /**
+     * Set status of item, add to status_message (if specified), and output message via Log facade (if valid log type).
+     *
+     * @param $message
+     * @param $logType
+     * @param null $status
+     * @param bool $newLine
+     */
+    private function setStatusAndMessage($message, $logType, $status = null, $newLine = true) {
+        $this->status_message .= $message;
+
+        // Validate status
+        switch($status) {
+            case static::STATUS_DEFAULT:
+            case static::STATUS_PENDING:
+            case static::STATUS_PROCESSED:
+            case static::STATUS_FAILED:
+                $this->status = $status;
+                break;
+            case null:
+                break; // nothing to do
+            default:
+                // Status type is not valid
+                $this->status_message .= "\nCan't set status to '$status'";
+        }
+
+        // Validate logType
+        if($message) {
+            switch($logType) {
+                case 'emergency':   Log::emergency($message, ['id' => $this->getKey()]); break;
+                case 'alert':       Log::alert($message,     ['id' => $this->getKey()]); break;
+                case 'critical':    Log::critical($message,  ['id' => $this->getKey()]); break;
+                case 'error':       Log::error($message,     ['id' => $this->getKey()]); break;
+                case 'warning':     Log::warning($message,   ['id' => $this->getKey()]); break;
+                case 'notice':      Log::notice($message,    ['id' => $this->getKey()]); break;
+                case 'info':        Log::info($message,      ['id' => $this->getKey()]); break;
+                case 'debug':       Log::debug($message,     ['id' => $this->getKey()]); break;
+                default:
+                    $this->status_message .= "\nInvalid log type: $logType'";
+            }
+
+            if($newLine) { $this->status_message .= "\n"; }
+        }
+
+        $this->save();
     }
 
 }

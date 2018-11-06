@@ -24,6 +24,7 @@ class CreateTtsItemsTable extends Migration
             $table->string('audio_file');
             $table->string('voice_id');
             $table->string('output_format')->default(\App\Helpers\TextToSpeech::OUTPUT_FORMAT_DEFAULT);
+            $table->string('status_message');
         });
     }
 
