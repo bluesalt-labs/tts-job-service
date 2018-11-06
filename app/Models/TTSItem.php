@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
 use App\Jobs\TTSJob;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
@@ -101,7 +102,9 @@ class TTSItem extends Model
                 $ttsItem->save();
 
                 $output['items'][] = $ttsItem->toArray();
-                dispatch( new TTSJob($ttsItem) );
+
+                $job = ( new TTSJob($ttsItem) )->delay(10);
+                dispatch($job);
             }
         }
 
@@ -424,6 +427,7 @@ class TTSItem extends Model
     }
 
 
+    // todo: this doesn't work perfectly, fix it.
     public function getAudioStream() {
         $s3 = new S3Storage();
         $s3->registerStreamWrapper();
@@ -431,10 +435,43 @@ class TTSItem extends Model
         try {
             $object = $s3->get($this->audio_file);
 
+            $length         = $object['ContentLength'];
+            $acceptRanges   = $object['AcceptRanges'];
+            $start          = 0;
+            $end            = $length - 1;
+
+            if (isset($_SERVER['HTTP_RANGE'])) {
+                $range = $_SERVER['HTTP_RANGE'];
+                list($param, $range) = explode('=', $range);
+
+                if(strtolower(trim($param)) === $acceptRanges) {
+                    $range = explode(',', $range);      // get the first range if there is more than 1
+                    $range = explode('-', $range[0]);   // separate start and end of range
+
+                    if(count($range) === 2) {                    // continue if we have 2 parameters
+
+                        // Make sure the start range is valid
+                        $newStart   = intval( $range[0] ) >= 0 ? intval( $range[0] ) : $start;
+                        $newEnd     = intval( $range[1] ) >= 1 ? intval( $range[1] ) : $end;
+                        $newLength  = $end + 1;
+
+                        if($newLength !== $length) {
+                            $start  = $newStart;
+                            $end    = $newEnd;
+                            $length = $newLength;
+
+                            header('HTTP/1.1 206 Partial Content');
+                        }
+                    }
+                }
+            }
+
             return response($object['Body'], 200, [
                 'Content-Type'          => $object['ContentType'],
                 'Content-Length'        => $object['ContentLength'],
-                'Content-Disposition'   => "inline; filename='".$this->name."'",
+                'Content-Disposition'   => "inline; filename='".$this->name.'.'.strtoupper($this->output_format)."'",
+                'Accept-Ranges: 0-'.$object['ContentLength'],
+                'Content-Range: bytes '.$start.'-'.$end.'/'.$length,
             ]);
 
             //return response($object['body'], '200')->header('Content-Type', $result['ContentType']);

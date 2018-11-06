@@ -139,6 +139,11 @@ class TextToSpeech
         // Convert all white space to a single space character
         $cleanText = preg_replace('/\s+/', ' ', $cleanText);
 
+        if(strlen($cleanText) < static::MAX_REQUEST_CHARS) {
+            $output = [$cleanText];
+            return $output;
+        }
+
         // Split input by sentences
         $textParts = explode('. ', $cleanText);
 
