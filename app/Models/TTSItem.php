@@ -138,9 +138,9 @@ class TTSItem extends Model
         if($name) {
             $this->attributes['name'] = $name;
             // todo: append voice to name
+        } else {
+            $this->attributes['name'] = $this->unique_id;
         }
-
-        $this->attributes['name'] = $this->unique_id;
     }
 
     /**
