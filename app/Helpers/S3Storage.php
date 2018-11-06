@@ -35,6 +35,10 @@ class S3Storage
         return new S3Client($credentials);
     }
 
+    public function registerStreamWrapper() {
+        return $this->s3->registerStreamWrapper();
+    }
+
 
     public function getUrl($filepath) {
         return $this->s3->getObjectUrl($this->bucket, $filepath);

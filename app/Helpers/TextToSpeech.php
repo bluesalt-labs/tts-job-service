@@ -123,7 +123,7 @@ class TextToSpeech
      * @return string
      */
     public static function cleanString($text) {
-        return strip_tags( preg_replace(["/:|<\/(li|p)>/", "/&#?[a-z0-9]+;/i", "/\s/"], [",", '', ' '], trim($text)) );
+        return strip_tags( preg_replace(["/:|<\/(li|p)>/", "/&#?[a-z0-9]+;/i", "/\s/"], [",", ' ', ' '], trim($text)) );
     }
 
     /**

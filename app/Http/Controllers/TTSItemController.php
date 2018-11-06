@@ -45,7 +45,6 @@ class TTSItemController extends Controller
         }
 
         if(gettype($voices) !== 'array') {
-            // todo: good enough?
             $voices = [$voices];
         }
 
@@ -86,7 +85,7 @@ class TTSItemController extends Controller
         /**
          * @var TTSItem $item
          */
-        $item = TTSItem::find($itemID);
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
 
         if(!$item) {
             $output['messages'][] = "Item ID: '$itemID' not found.";
@@ -103,12 +102,35 @@ class TTSItemController extends Controller
         return response()->json($output);
     }
 
+
+    public function getItemAudio($itemID) {
+        $output = [
+            'success'   => false,
+            'messages'  => [],
+        ];
+
+        /**
+         * @var TTSItem $item
+         */
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
+
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        return $item->getAudioStream();
+    }
+
     public function deleteItem($itemID) {
         $output = [
             'success'   => false,
             'messages'  => [],
         ];
 
+        /**
+         * @var TTSItem $item
+         */
         $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
 
         if(!$item) {

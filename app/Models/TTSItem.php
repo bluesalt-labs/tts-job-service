@@ -8,6 +8,7 @@ use App\Jobs\TTSJob;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TTSItem extends Model
 {
@@ -422,6 +423,30 @@ class TTSItem extends Model
         return true;
     }
 
+
+    public function getAudioStream() {
+        $s3 = new S3Storage();
+        $s3->registerStreamWrapper();
+
+        try {
+            $object = $s3->get($this->audio_file);
+
+            return response($object['Body'], 200, [
+                'Content-Type'          => $object['ContentType'],
+                'Content-Length'        => $object['ContentLength'],
+                'Content-Disposition'   => "inline; filename='".$this->name."'",
+            ]);
+
+            //return response($object['body'], '200')->header('Content-Type', $result['ContentType']);
+        } catch(\Exception $e) {
+            return response()->json([
+                'success'   => false,
+                'messages'  => [
+                    $e->getMessage()
+                ],
+            ]);
+        }
+    }
 
     /**
      * Set status of item, add to status_message (if specified), and output message via Log facade (if valid log type).
