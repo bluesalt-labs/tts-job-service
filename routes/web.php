@@ -16,15 +16,57 @@ $router->get('/', function() use ($router){
 });
 
 $router->group([
-    'prefix'        => 'v1/items',
+    'prefix'        => 'api/v1/items',
     //'middleware'    => 'auth',
+    'as'            => 'items.',
 ], function() use ($router) {
-    $router->post('create', 'TTSItemController@submitJobRequest');
-    $router->get('{item_id}/regenerate', 'TTSItemController@regenerateItem');
-    $router->get('{item_id}/status', 'TTSItemController@getItemStatus');
-    $router->get('{item_id}/text', 'TTSItemController@getItemText');
-    $router->get('{item_id}/audio', 'TTSItemController@downloadItemAudio');
-    $router->get('{item_id}/audio/download', 'TTSItemController@downloadItemAudio');
-    $router->get('{item_id}/audio/stream', 'TTSItemController@getItemAudio');
-    $router->delete('{item_id}/delete', 'TTSItemController@deleteItem');
+
+    // Create a new TTSItem
+    $router->post('create', [
+        'as'    => 'create',
+        'uses'  => 'TTSItemController@submitJobRequest'
+    ]);
+
+    // Regenerate a TTSItem
+    $router->get('{item_id}/regenerate', [
+        'as'    => 'regenerate',
+        'uses'  => 'TTSItemController@regenerateItem'
+    ]);
+
+    // Get the status of a TTSItem
+    $router->get('{item_id}/status', [
+        'as'    => 'status',
+        'uses'  => 'TTSItemController@getItemStatus'
+    ]);
+
+    // Get the text content of a TTSItem
+    $router->get('{item_id}/text', [
+        'as'    => 'text',
+        'uses'  => 'TTSItemController@getItemText'
+    ]);
+
+    // Download the audio file of a TTSItem if available
+    $router->get('{item_id}/audio', [
+        'as'    => 'audio',
+        'uses'  => 'TTSItemController@downloadItemAudio'
+    ]);
+
+    // Download the audio file of a TTSItem if available
+    $router->get('{item_id}/audio/download', [
+        'as'    => 'audio.download',
+        'uses'  => 'TTSItemController@downloadItemAudio'
+    ]);
+
+    // Stream the audio file of a TTSItem if available
+    $router->get('{item_id}/audio/stream', [
+        'as'    => 'audio.stream',
+        'uses'  => 'TTSItemController@getItemAudio'
+    ]);
+
+    // Delete a TTSItem
+    $router->delete('{item_id}/delete', [
+        'as'    => 'delete',
+        'uses'  => 'TTSItemController@deleteItem'
+    ]);
+
 });

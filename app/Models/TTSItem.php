@@ -460,16 +460,19 @@ class TTSItem extends Model
 
     /**
      * Stream the item's audio file.
-     * todo: this doesn't work perfectly, fix it.
      *
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory
      */
     public function getAudioStream() {
         $s3 = new S3Storage();
         $s3->registerStreamWrapper();
+        $stream = null;
+
+        $fileName   = urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format);
+        $fileKey    = $this->audio_file;
 
         try {
-            $object = $s3->get($this->audio_file);
+            $object = $s3->head($fileKey);
 
             $length         = $object['ContentLength'];
             $acceptRanges   = $object['AcceptRanges'];
@@ -502,15 +505,32 @@ class TTSItem extends Model
                 }
             }
 
-            return response($object['Body'], 200, [
-                'Content-Type'          => $object['ContentType'],
-                'Content-Length'        => $object['ContentLength'],
-                'Content-Disposition'   => "inline; filename='".urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format)."'",
-                'Accept-Ranges: 0-'.$object['ContentLength'],
-                'Content-Range: bytes '.$start.'-'.$end.'/'.$length,
-            ]);
+            header('Content-Type: '.$object['ContentType']);
+            header('Content-Length: '.$length);
+            header('Content-Disposition: filename='.$fileName);
+            header('Last-Modified: '.$object['LastModified']);
+            header('Accept-Ranges: 0-'.$object['ContentLength']);
+            header("Content-Range: bytes $start-$end/$length");
+            header('Cache-Control: no-cache');
 
-            //return response($object['body'], '200')->header('Content-Type', $result['ContentType']);
+            // Open a stream in read-only mode
+            if (!($stream = fopen("s3://".env('AWS_BUCKET')."/$fileKey", 'r'))) {
+                throw new \Exception('Could not open stream for reading file: ['.$fileKey.']');
+            }
+
+            // Seek to the requested start of the file (0 by default)
+            fseek($stream, $start);
+
+            // Read 8kb at a time for the length requested.
+            while($length && !feof($stream)) {
+                $read = ($length > 8192) ? 8192 : $length;
+                $length -= $read;
+                echo fread($stream, $read);
+            }
+
+            // Be sure to close the stream resource when you're done with it
+            fclose($stream);
+
         } catch(\Exception $e) {
             return response()->json([
                 'success'   => false,
@@ -529,12 +549,15 @@ class TTSItem extends Model
     public function downloadAudioFile() {
         $s3 = new S3Storage();
 
+        $fileName = urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format);
+
         try {
             $object = $s3->get($this->audio_file);
 
             return response()->make($object['Body'], 200, [
                 'Content-Type'          => $object['ContentType'],
-                'Content-Disposition'   => "attachment; filename='".urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format)."'",
+                'Content-Length'        => $object['ContentLength'],
+                'Content-Disposition'   => "attachment; filename='$fileName'",
             ]);
         } catch(\Exception $e) {
             return response()->json([

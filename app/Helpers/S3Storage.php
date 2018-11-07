@@ -35,6 +35,10 @@ class S3Storage
         return new S3Client($credentials);
     }
 
+    public function getBucket() {
+        return $this->bucket;
+    }
+
     public function registerStreamWrapper() {
         return $this->s3->registerStreamWrapper();
     }
@@ -56,6 +60,13 @@ class S3Storage
 
         // todo: see https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-s3-2006-03-01.html#getobject
         return $object;
+    }
+
+    public function head($filepath) {
+        return $this->s3->headObject([
+            'Bucket'    => $this->bucket,
+            'Key'       => $filepath,
+        ]);
     }
 
 
