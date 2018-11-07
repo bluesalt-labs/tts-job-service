@@ -101,8 +101,7 @@ class TTSItem extends Model
 
                 $output['items'][] = $ttsItem->toArray();
 
-                $job = ( new TTSJob($ttsItem) )->delay(10);
-                dispatch($job);
+                dispatch( new TTSJob($ttsItem) );
             }
         }
 
@@ -132,8 +131,7 @@ class TTSItem extends Model
         // todo: Should we not do this?
         if($audioFilePath) { $s3->delete($audioFilePath); }
 
-        $job = ( new TTSJob($this) )->delay(10);
-        dispatch($job);
+        dispatch( new TTSJob($this) );
 
         return true;
     }

@@ -6,6 +6,7 @@ use App\Models\TTSItem;
 
 class TTSJob extends Job
 {
+    public $tries = 2;
     protected $ttsItem;
 
     /**
