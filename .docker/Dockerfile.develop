@@ -12,8 +12,4 @@ RUN apt-get update \
 # expose doc root
 VOLUME ["/var/www/html"]
 
-# build with below, assuming you are in root of tbh-migration source dir
-# docker build --file .docker/Dockerfile.develop -t bluesalt-labs/tts-job-service:develop .
-
-# run for development with the below (make sure you create an .env file first, with cp ./.env.example ./.env)
-# docker run -p 8000:80 --name=tts-job-service -v `pwd`:/var/www/html bluesalt-labs/tts-job-service:develop
+RUN touch $VOLUME/database/database.sqlite
