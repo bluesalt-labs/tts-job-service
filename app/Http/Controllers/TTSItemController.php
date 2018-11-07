@@ -132,7 +132,7 @@ class TTSItemController extends Controller
             'item_id'   => null,
             'unique_id' => null,
             'text'      => null,
-            'messages'  => null,
+            'messages'  => [],
         ];
 
         /**
