@@ -15,12 +15,16 @@ $router->get('/', function() use ($router){
     return env('APP_NAME', 'Laravel Lumen');
 });
 
-//$router->group(['middleware' => 'auth'], function() use ($router) {
-$router->group([], function() use ($router) {
-    $router->post('submit-job-request', 'TTSItemController@submitJobRequest');
-    $router->get('regenerate-item/{item_id}', 'TTSItemController@regenerateItem');
-    $router->get('get-item-status/{item_id}', 'TTSItemController@getItemStatus');
-    $router->get('get-item-audio/{item_id}', 'TTSItemController@getItemAudio');
-    $router->get('download-item-audio/{item_id}', 'TTSItemController@downloadItemAudio');
-    $router->delete('delete-item/{item_id}', 'TTSItemController@deleteItem');
+$router->group([
+    'prefix'        => 'v1/items',
+    //'middleware'    => 'auth',
+], function() use ($router) {
+    $router->post('create', 'TTSItemController@submitJobRequest');
+    $router->get('{item_id}/regenerate', 'TTSItemController@regenerateItem');
+    $router->get('{item_id}/status', 'TTSItemController@getItemStatus');
+    $router->get('{item_id}/text', 'TTSItemController@getItemText');
+    $router->get('{item_id}/audio', 'TTSItemController@downloadItemAudio');
+    $router->get('{item_id}/audio/download', 'TTSItemController@downloadItemAudio');
+    $router->get('{item_id}/audio/stream', 'TTSItemController@getItemAudio');
+    $router->delete('{item_id}/delete', 'TTSItemController@deleteItem');
 });

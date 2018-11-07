@@ -96,9 +96,7 @@ class TTSItemController extends Controller
             'item_id'       => null,
             'unique_id'     => null,
             'name'          => null,
-            'item_status'   => null,
-            'job_status'    => null,
-            'text'          => null,
+            'status'        => null,
             'audio_url'     => null,
             'messages'      => [],
         ];
@@ -117,14 +115,50 @@ class TTSItemController extends Controller
         $output['unique_id']    = $item->unique_id;
         $output['name']         = $item->name;
         $output['status']       = $item->status;
-        $output['text']         = $item->getItemText();
         $output['audio_url']    = $item->audio_file;
         $output['messages']     = array_merge($output['messages'], explode("\n", $item->status_message));
 
         return response()->json($output);
     }
 
+    /**
+     * Get the text content of a TTSItem by itemID
+     *
+     * @param $itemID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getItemText($itemID) {
+        $output = [
+            'item_id'   => null,
+            'unique_id' => null,
+            'text'      => null,
+            'messages'  => null,
+        ];
 
+        /**
+         * @var TTSItem $item
+         */
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
+
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        $output['item_id']      = $item->id;
+        $output['unique_id']    = $item->unique_id;
+        $output['text']         = $item->getItemText();
+        $output['messages']     = array_merge($output['messages'], explode("\n", $item->status_message));
+
+        return response()->json($output);
+    }
+
+    /**
+     * Get the audio stream of a TTSItem
+     *
+     * @param $itemID
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory
+     */
     public function getItemAudio($itemID) {
         $output = [
             'success'   => false,
@@ -144,6 +178,12 @@ class TTSItemController extends Controller
         return $item->getAudioStream();
     }
 
+    /**
+     * Download the audio file of a TTSItem
+     *
+     * @param $itemID
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
     public function downloadItemAudio($itemID) {
         $output = [
             'success'   => false,
