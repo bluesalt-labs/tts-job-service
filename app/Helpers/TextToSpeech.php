@@ -125,7 +125,15 @@ class TextToSpeech
      * @return string
      */
     public static function cleanString($text) {
-        return strip_tags( preg_replace(["/:|<\/(li|p)>/", "/&#?[a-z0-9]+;/i", "/\s/"], [",", ' ', ' '], trim($text)) );
+        return
+            strip_tags(
+                preg_replace(
+                /* | colon, list, p tags | html chars        | whitespace chars      | (s) at end of a word     | */
+                    ["/:|<\/(li|p)>/",     "/&#?[a-z0-9]+;/i", "/\n/", "/\s/", "/\t/", "/(?<=\w)(\(s\))(?=\B)/"],
+                    [",", ' ', '<break />', ' ', ' ', "s"],
+                    trim($text)
+                )
+            );
     }
 
     /**
