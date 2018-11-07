@@ -21,5 +21,6 @@ $router->group([], function() use ($router) {
     $router->get('regenerate-item/{item_id}', 'TTSItemController@regenerateItem');
     $router->get('get-item-status/{item_id}', 'TTSItemController@getItemStatus');
     $router->get('get-item-audio/{item_id}', 'TTSItemController@getItemAudio');
+    $router->get('download-item-audio/{item_id}', 'TTSItemController@downloadItemAudio');
     $router->delete('delete-item/{item_id}', 'TTSItemController@deleteItem');
 });

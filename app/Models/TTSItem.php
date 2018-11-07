@@ -460,8 +460,12 @@ class TTSItem extends Model
         return true;
     }
 
-
-    // todo: this doesn't work perfectly, fix it.
+    /**
+     * Stream the item's audio file.
+     * todo: this doesn't work perfectly, fix it.
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory
+     */
     public function getAudioStream() {
         $s3 = new S3Storage();
         $s3->registerStreamWrapper();
@@ -503,12 +507,37 @@ class TTSItem extends Model
             return response($object['Body'], 200, [
                 'Content-Type'          => $object['ContentType'],
                 'Content-Length'        => $object['ContentLength'],
-                'Content-Disposition'   => "inline; filename='".$this->name.'.'.strtoupper($this->output_format)."'",
+                'Content-Disposition'   => "inline; filename='".$this->name.'.'.strtolower($this->output_format)."'",
                 'Accept-Ranges: 0-'.$object['ContentLength'],
                 'Content-Range: bytes '.$start.'-'.$end.'/'.$length,
             ]);
 
             //return response($object['body'], '200')->header('Content-Type', $result['ContentType']);
+        } catch(\Exception $e) {
+            return response()->json([
+                'success'   => false,
+                'messages'  => [
+                    $e->getMessage()
+                ],
+            ]);
+        }
+    }
+
+    /**
+     * Download the item's audio file.
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function downloadAudioFile() {
+        $s3 = new S3Storage();
+
+        try {
+            $object = $s3->get($this->audio_file);
+
+            return response()->make($object['Body'], 200, [
+                'Content-Type'          => $object['ContentType'],
+                'Content-Disposition'   => "attachment; filename='".$this->name.'.'.strtolower($this->output_format)."'",
+            ]);
         } catch(\Exception $e) {
             return response()->json([
                 'success'   => false,

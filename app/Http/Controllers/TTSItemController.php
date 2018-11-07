@@ -144,6 +144,25 @@ class TTSItemController extends Controller
         return $item->getAudioStream();
     }
 
+    public function downloadItemAudio($itemID) {
+        $output = [
+            'success'   => false,
+            'messages'  => [],
+        ];
+
+        /**
+         * @var TTSItem $item
+         */
+        $item = TTSItem::where('id', $itemID)->orWhere('unique_id', $itemID)->first();
+
+        if(!$item) {
+            $output['messages'][] = "Item ID: '$itemID' not found.";
+            return response()->json($output);
+        }
+
+        return $item->downloadAudioFile();
+    }
+
     public function deleteItem($itemID) {
         $output = [
             'success'   => false,
