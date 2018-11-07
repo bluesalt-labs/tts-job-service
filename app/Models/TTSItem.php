@@ -507,7 +507,7 @@ class TTSItem extends Model
             return response($object['Body'], 200, [
                 'Content-Type'          => $object['ContentType'],
                 'Content-Length'        => $object['ContentLength'],
-                'Content-Disposition'   => "inline; filename='".$this->name.'.'.strtolower($this->output_format)."'",
+                'Content-Disposition'   => "inline; filename='".$this->name.'_'.$this->voice_id.'.'.strtolower($this->output_format)."'",
                 'Accept-Ranges: 0-'.$object['ContentLength'],
                 'Content-Range: bytes '.$start.'-'.$end.'/'.$length,
             ]);
@@ -536,7 +536,7 @@ class TTSItem extends Model
 
             return response()->make($object['Body'], 200, [
                 'Content-Type'          => $object['ContentType'],
-                'Content-Disposition'   => "attachment; filename='".$this->name.'.'.strtolower($this->output_format)."'",
+                'Content-Disposition'   => "attachment; filename='".$this->name.'_'.$this->voice_id.'.'.strtolower($this->output_format)."'",
             ]);
         } catch(\Exception $e) {
             return response()->json([
