@@ -547,16 +547,16 @@ class TTSItem extends Model
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      */
     public function downloadAudioFile() {
-        $s3 = new S3Storage();
-
-        $fileName = urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format);
+        $s3         = new S3Storage();
+        $fileName   = urlencode($this->name).'_'.$this->voice_id.'.'.strtolower($this->output_format);
+        $fileKey    = $this->audio_file;
 
         try {
-            $object = $s3->get($this->audio_file);
+            $s3->registerStreamWrapper();
+            $object = $s3->head($this->audio_file);
 
-            return response()->make($object['Body'], 200, [
+            return response()->download("s3://".env('AWS_BUCKET')."/$fileKey", $fileName, [
                 'Content-Type'          => $object['ContentType'],
-                'Content-Length'        => $object['ContentLength'],
                 'Content-Disposition'   => "attachment; filename='$fileName'",
             ]);
         } catch(\Exception $e) {
