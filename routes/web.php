@@ -21,52 +21,58 @@ $router->group([
     'as'            => 'items.',
 ], function() use ($router) {
 
+    // List all items
+    $router->get('/', [
+        'as'    => 'list',
+        'uses'  => 'TTSItemController@listItems',
+    ]);
+
     // Create a new TTSItem
     $router->post('create', [
         'as'    => 'create',
-        'uses'  => 'TTSItemController@submitJobRequest'
+        'uses'  => 'TTSItemController@submitJobRequest',
     ]);
 
     // Regenerate a TTSItem
     $router->get('{item_id}/regenerate', [
         'as'    => 'regenerate',
-        'uses'  => 'TTSItemController@regenerateItem'
+        'uses'  => 'TTSItemController@regenerateItem',
     ]);
 
     // Get the status of a TTSItem
     $router->get('{item_id}/status', [
         'as'    => 'status',
-        'uses'  => 'TTSItemController@getItemStatus'
+        'uses'  => 'TTSItemController@getItemStatus',
     ]);
 
     // Get the text content of a TTSItem
     $router->get('{item_id}/text', [
         'as'    => 'text',
-        'uses'  => 'TTSItemController@getItemText'
+        'uses'  => 'TTSItemController@getItemText',
     ]);
 
     // Download the audio file of a TTSItem if available
     $router->get('{item_id}/audio', [
         'as'    => 'audio',
-        'uses'  => 'TTSItemController@downloadItemAudio'
+        'uses'  => 'TTSItemController@downloadItemAudio',
     ]);
 
     // Download the audio file of a TTSItem if available
     $router->get('{item_id}/audio/download', [
         'as'    => 'audio.download',
-        'uses'  => 'TTSItemController@downloadItemAudio'
+        'uses'  => 'TTSItemController@downloadItemAudio',
     ]);
 
     // Stream the audio file of a TTSItem if available
     $router->get('{item_id}/audio/stream', [
         'as'    => 'audio.stream',
-        'uses'  => 'TTSItemController@getItemAudio'
+        'uses'  => 'TTSItemController@getItemAudio',
     ]);
 
     // Delete a TTSItem
     $router->delete('{item_id}/delete', [
         'as'    => 'delete',
-        'uses'  => 'TTSItemController@deleteItem'
+        'uses'  => 'TTSItemController@deleteItem',
     ]);
 
 });

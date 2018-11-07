@@ -17,6 +17,40 @@ class TTSItemController extends Controller
         //
     }
 
+
+    public function listItems(Request $request) {
+        $output = [
+            'success'   => false,
+            'items'     => [],
+            'messages'  => [],
+        ];
+
+        /**
+         * @var TTSItem $item
+         */
+        $items = TTSItem::all();
+
+        if(!$items) {
+            $output['messages'][] = "No TextToSpeech items found.";
+            return response()->json($output);
+        }
+
+        if(count($items) > 0) {
+            $output['success']  = true;
+        }
+
+        foreach($items as $item) {
+            $output['items'][] = [
+                'item_id'       => $item->id,
+                'unique_id'     => $item->unique_id,
+                'name'          => $item->name,
+                'status'        => $item->status,
+            ];
+        }
+
+        return response()->json($output);
+    }
+
     /**
      * Submit a new job request.
      *
