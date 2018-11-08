@@ -30,12 +30,7 @@ APP_NAME
 
 
 #### Request
-> **Content-Type:** `application/json`
-
-**Parameters:**   
-```json
-{}
-```
+> N/A
 
 
 #### Response
@@ -63,7 +58,7 @@ APP_NAME
 > **Request Type:** `POST`   
 > **Route Name:** `items.create`   
 > **Description**   
-> Create a new TTSItem and add it to the job queue. 
+> Create new TTSItem(s) and add to the job queue. 
 
 
 #### Request
@@ -74,7 +69,7 @@ APP_NAME
 - `text`: **Required**. The text to convert to audio.
 - `voices`: **Required**. can be either a single integer value or an array of integer values.
 - `name`: Optional. Name of the item.
-- `output_format`: Optional. format to output as. 
+- `output_format`: Optional. Audio output format. See [TTS output formats](#tts-output-formats) below for options.
 
 ```json
 {
@@ -94,35 +89,35 @@ APP_NAME
 {
   "success":  true,
   "items":  [
-  {
-    "id":       23,
-    "name":       "Assessment-1",
-    "user_id":    null,
-    "status":     "Processed",
-    "voice_id":     "Matthew",
-    "output_format":  "mp3",
-    "unique_id":    "1139921d00c38b6c4f30cdb0c6c66a2",
-    "text_file":    "text\/1139921d00c38b6c4f30cdb0c6c66a2.txt",
-    "audio_file":   "audio\/1139921d00c38b6c4f30cdb0c6c66a2.mp3",
-    "updated_at":   "2018-11-07 14:04:44",
-    "created_at":   "2018-11-07 14:04:44",
-  },
-  {
-    "id":         24,
-    "name":      "Assessment-1",
-    "user_id":      null,
-    "status":       "Created",
-    "voice_id":     "Joanna",
-    "output_format":  "mp3",
-    "unique_id":    "fcdb0c6c66ab707597f30cdb0c696a63",
-    "text_file":    "text\/fcdb0c6c66ab707597f30cdb0c696a63.txt",
-    "audio_file":     "audio\/fcdb0c6c66ab707597f30cdb0c696a63.mp3",
-    "updated_at":     "2018-11-07 14:04:50",
-    "created_at":     "2018-11-07 14:04:50"
-  }
+    {
+      "id":             23,
+      "name":           "Assessment-1",
+      "user_id":        null,
+      "status":         "Processed",
+      "voice_id":       "Matthew",
+      "output_format":  "mp3",
+      "unique_id":      "1139921d00c38b6c4f30cdb0c6c66a2",
+      "text_file":      "text\/1139921d00c38b6c4f30cdb0c6c66a2.txt",
+      "audio_file":     "audio\/1139921d00c38b6c4f30cdb0c6c66a2.mp3",
+      "updated_at":     "2018-11-07 14:04:44",
+      "created_at":     "2018-11-07 14:04:44",
+    },
+    {
+      "id":             24,
+      "name":           "Assessment-1",
+      "user_id":        null,
+      "status":         "Created",
+      "voice_id":       "Joanna",
+      "output_format":  "mp3",
+      "unique_id":      "fcdb0c6c66ab707597f30cdb0c696a63",
+      "text_file":      "text\/fcdb0c6c66ab707597f30cdb0c696a63.txt",
+      "audio_file":     "audio\/fcdb0c6c66ab707597f30cdb0c696a63.mp3",
+      "updated_at":     "2018-11-07 14:04:50",
+      "created_at":     "2018-11-07 14:04:50"
+    }
   ],
   "messages": [
-  ""
+    "any error messages"
   ]
 }
 ```
@@ -132,23 +127,23 @@ APP_NAME
 > **Request Type:** `GET`   
 > **Route Name:** `items.regenerate`   
 > **Description**   
-> 
+> Regenerate the audio for an existing TTS item
 
 
 #### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
+> N/A
 
 
 #### Response
 > **Content-Type:** `application/json`
 
 ```json
-{}
+{
+  "success":  true,
+  "messages": [
+    ""
+  ]
+}
 ```
 
 
@@ -156,23 +151,28 @@ APP_NAME
 > **Request Type:** `GET`   
 > **Route Name:** `items.status`   
 > **Description**   
-> 
+> Get the status of a TTS item.
 
 
 #### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
+> N/A
 
 
 #### Response
 > **Content-Type:** `application/json`
 
 ```json
-{}
+{
+  "item_id":    24,
+  "unique_id":  "fcdb0c6c66ab707597f30cdb0c696a63",
+  "name":       "Sample Audio File",
+  "status":     "Processed",
+  "audio_url":  "audio\/fcdb0c6c66ab707597f30cdb0c696a63.mp3",
+  "messages":   [
+    "foo",
+    "bar"
+  ]
+}
 ```
 
 
@@ -180,23 +180,26 @@ APP_NAME
 > **Request Type:** `GET`   
 > **Route Name:** `items.text`   
 > **Description**   
-> 
+> Get the cached text content of a TTS item.
 
 
 #### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
+> N/A
 
 
 #### Response
 > **Content-Type:** `application/json`
 
 ```json
-{}
+{
+  "item_id":    24,
+  "unique_id":  "fcdb0c6c66ab707597f30cdb0c696a63",
+  "text":       "Test audio item content here.",
+  "messages":   [
+    "foo",
+    "bar"
+  ]
+}
 ```
 
 
@@ -204,93 +207,78 @@ APP_NAME
 > **Request Type:** `GET`   
 > **Route Name:** `items.audio`   
 > **Description**   
-> 
-
-
-#### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
-
-
-#### Response
-> **Content-Type:** `application/json`
-
-```json
-{}
-```
+> Alias for `/items/{item_id}/audio/download`.
 
 
 ### `/items/{item_id}/audio/download`
 > **Request Type:** `GET`   
 > **Route Name:** `items.audio.download`   
 > **Description**   
-> 
+> Download the audio file for the specified TTS item if available.
 
 
 #### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
+> N/A
 
 
 #### Response
-> **Content-Type:** `application/json`
+> **Content-Type:** `application/json | audio/mpeg | audio/ogg | audio/wav`
 
+- json response on error:
 ```json
-{}
+{
+  "success":    false,
+  "messsages":  [
+    "error",
+    "messages"
+  ]
+}
 ```
+- otherwise, the audio file is returned as a file download.
 
 
 ### `/items/{item_id}/audio/stream`
 > **Request Type:** `GET`   
 > **Route Name:** `items.audio.stream`   
 > **Description**   
-> 
+> Stream the audio file of a TTS item if available
 
 
 #### **Parameters**
-
-```json
-{}
-```
+> N/A
 
 
 #### Response
-> **Content-Type:** `application/json`
+> **Content-Type:** `application/json | audio/mpeg | audio/ogg | audio/wav`
 
+- json response on error:
 ```json
-{}
+{
+  "success":  false,
+  "messages": []
+}
 ```
-
+- otherwise, the audio file is returned as a stream.
 
 ### `/items/{item_id}/delete`
 > **Request Type:** `DELETE`   
 > **Route Name:** `items.delete`   
 > **Description**   
-> 
+> Delete a TTS item and it's associated files in S3.
 
 
 #### Request
-> **Content-Type:** `application/json`   
-
-**Parameters:**
-```json
-{}
-```
+> N/A
 
 
 #### Response
 > **Content-Type:** `application/json`
 
 ```json
-{}
+{
+  "success":  true,
+  "messages": []
+}
 ```
 
 
@@ -414,7 +402,7 @@ APP_NAME
 > **Request Type:** `GET`   
 > **Route Name:** `tts.ssml.replacements`   
 > **Description**   
-> 
+> Get the SSML replacements that will be applied to TTS items. 
 
 
 #### Request
@@ -436,11 +424,11 @@ APP_NAME
 ```
 
 
-### `/tts/output-formats`
+### `/tts/output-formats` {#tts-output-formats}
 > **Request Type:** `GET`   
 > **Route Name:** `tts.output.formats`   
 > **Description**   
-> 
+> Get the audio output formats available.
 
 
 #### Request

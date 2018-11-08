@@ -110,6 +110,7 @@ class TTSItem extends Model
 
     /**
      * Regenerate the text to speech audio from the still cached text file.
+     * @return bool
      */
     public function regenerateAudio() {
         $s3 = new S3Storage();
@@ -150,6 +151,16 @@ class TTSItem extends Model
      * @return string
      */
     public function setUniqueIdAttribute($value) {
+        $this->generateUniqueID();
+        return $this->attributes['unique_id'];
+    }
+
+    /**
+     *
+     *
+     * @return string
+     */
+    public function getUniqueIdAttribute() {
         $this->generateUniqueID();
         return $this->attributes['unique_id'];
     }
@@ -213,16 +224,6 @@ class TTSItem extends Model
     public function setTextFileAttribute($filepath) {
         // todo?
         $this->attributes['text_file'] = $filepath;
-    }
-
-    /**
-     *
-     *
-     * @return string
-     */
-    public function getUniqueIdAttribute() {
-        $this->generateUniqueID();
-        return $this->attributes['unique_id'];
     }
 
     /**

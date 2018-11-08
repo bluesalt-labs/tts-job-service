@@ -12,4 +12,3 @@ RUN apt-get update \
 # expose doc root
 VOLUME ["/var/www/html"]
 
-RUN touch $VOLUME/database/database.sqlite
