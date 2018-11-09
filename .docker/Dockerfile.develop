@@ -7,12 +7,14 @@ ENV WEB_DOCUMENT_ROOT /var/www/html/public
 
 # Install Packages
 RUN apt-get update \
-  && apt-get install sqlite3 libsqlite3-dev
-  && apt-get install supervisor
+  && apt-get install -y sqlite3 libsqlite3-dev \
+  && apt-get install -y supervisor \
+  && apt-get install -y libpq-dev \
+  && docker-php-ext-install pdo_pgsql
 
 # expose doc root
 VOLUME ["/var/www/html"]
 
 # Initiate Supervisor
-RUN cp /var/www/html/.supervisor/tts-job-worker.conf /opt/docker/etc/supervisor.d/
-RUN supervisorctl reread && supervisorctl update && supervisorctl start tts-job-worker:*
+RUN ln -s /var/www/html/.docker/tts-job-worker.conf /opt/docker/etc/supervisor.d/tts-job-worker.conf \
+  && supervisorctl start tts-job-worker:*

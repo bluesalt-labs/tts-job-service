@@ -5,15 +5,22 @@ FROM webdevops/php-nginx:7.1 as production
 # set the document root
 ENV WEB_DOCUMENT_ROOT /var/www/html/public
 
-# Install PostreSQL and Supervisor
+# Install Packages
 RUN apt-get update \
+  && apt-get install -y sqlite3 libsqlite3-dev \
+  && apt-get install -y supervisor \
   && apt-get install -y libpq-dev \
   && docker-php-ext-install pdo_pgsql
-  && apt-get install supervisor
 
-# expose doc root
-VOLUME ["/var/www/html"]
+# copy code into image
+COPY . /var/www/html
+
+# set ownership
+RUN chown -R application:www-data /var/www/html
+
+# set permissions
+RUN chmod g+rwx -R /var/www/html/storage
 
 # Initiate Supervisor
-RUN cp /var/www/html/.supervisor/tts-job-worker.conf /opt/docker/etc/supervisor.d/
-RUN supervisorctl reread && supervisorctl update && supervisorctl start tts-job-worker:*
+RUN ln -s /var/www/html/.docker/tts-job-worker.conf /opt/docker/etc/supervisor.d/tts-job-worker.conf \
+  && supervisorctl start tts-job-worker:*
