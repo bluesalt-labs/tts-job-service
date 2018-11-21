@@ -19,7 +19,20 @@ class AudioItemPart extends Model
     const STATUS_PROCESSED = 'Processed';
     const STATUS_FAILED = 'Failed';
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function requestItem() {
         return $this->belongsTo(RequestItem::class);
     }
+
+
+    public function getTextItemPart() {
+        //if($this->)
+    }
+
+    public function process() {
+        // todo
+    }
+
 }

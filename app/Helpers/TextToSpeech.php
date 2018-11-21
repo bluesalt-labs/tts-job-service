@@ -180,7 +180,7 @@ class TextToSpeech
      * @param string $text
      * @return string
      */
-    private function textToSSML($text) {
+    public function textToSSML($text) {
         $cleanString = $text;
 
         foreach(static::getSSMLReplacements() as $acronym => $replacement) {

@@ -16,10 +16,9 @@ class CreateTextItemParts extends Migration
         Schema::create('text_item_parts', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
-            $table->integer('item_request_id');
-            $table->integer('string_index');
-            $table->text('string_content');
-            $table->string('status')->default(''); // todo
+            $table->integer('request_item_id');
+            $table->integer('item_index');
+            $table->text('item_content');
         });
     }
 

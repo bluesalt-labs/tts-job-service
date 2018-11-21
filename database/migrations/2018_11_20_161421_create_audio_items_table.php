@@ -16,6 +16,10 @@ class CreateAudioItemsTable extends Migration
         Schema::create('audio_items', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
+            $table->integer('request_item_id');
+            $table->string('voice');
+            $table->string('status')->default(''); // todo
+
         });
     }
 

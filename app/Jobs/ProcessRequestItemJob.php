@@ -12,7 +12,7 @@ class ProcessRequestItemJob extends Job
      * The number of seconds the job can run before timing out.
      * @var int
      */
-    //public $timeout = 2000;
+    public $timeout = 120;
 
     protected $requestItem;
 

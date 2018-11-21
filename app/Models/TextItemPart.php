@@ -2,24 +2,18 @@
 
 namespace App\Models;
 
-use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
 
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
 class TextItemPart extends Model
 {
     protected $table = 'text_item_parts';
-    protected $fillable = ['unique_id', 'name', 'user_id', 'status', 'text_file', 'audio_file', 'voice_id', 'output_format'];
+    protected $fillable = ['request_item_id', 'item_index', 'item_content'];
 
-    const STATUS_DEFAULT = 'Created';
-    const STATUS_PENDING = 'Pending';
-    const STATUS_PROCESSED = 'Processed';
-    const STATUS_FAILED = 'Failed';
-
-
+    // todo: it'd be awesome for this model to validate the item_index.
+    //       basically make sure there isn't another TextItemPart
+    //       with the same request_item_id and item_index.
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -29,6 +23,7 @@ class TextItemPart extends Model
     }
 
     /**
+     * // todo: I mean, does this model care about this?
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
     public function audioItemParts() {

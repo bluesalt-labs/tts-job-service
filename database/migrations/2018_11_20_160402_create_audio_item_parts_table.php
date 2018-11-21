@@ -16,6 +16,10 @@ class CreateAudioItemPartsTable extends Migration
         Schema::create('audio_item_parts', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
+            $table->integer('request_item_id');
+            $table->integer('item_index');
+            $table->string('voice');
+            $table->string('audio_file');
         });
     }
 

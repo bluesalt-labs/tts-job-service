@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
-//use App\Jobs\TTSJob;
+use App\Jobs\TTSJob;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;

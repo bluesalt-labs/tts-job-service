@@ -2,18 +2,17 @@
 
 namespace App\Jobs;
 
-use App\Models\RequestItem;
 use App\Models\AudioItemPart;
 
 class GenerateAudioItemPartJob extends Job
 {
-    public $tries = 1;
+    public $tries = 2;
 
     /**
      * The number of seconds the job can run before timing out.
      * @var int
      */
-    //public $timeout = 2000;
+    public $timeout = 30;
 
     protected $audioItemPart;
 
@@ -34,6 +33,6 @@ class GenerateAudioItemPartJob extends Job
      * @return void
      */
     public function handle() {
-        // todo
+        $this->audioItemPart->process();
     }
 }

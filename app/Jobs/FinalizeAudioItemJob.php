@@ -2,18 +2,17 @@
 
 namespace App\Jobs;
 
-use App\Models\RequestItem;
 use App\Models\AudioItem;
 
 class FinalizeAudioItemJob extends Job
 {
-    public $tries = 1;
+    public $tries = 10;
 
     /**
      * The number of seconds the job can run before timing out.
      * @var int
      */
-    //public $timeout = 2000;
+    public $timeout = 300;
 
     protected $audioItem;
 
@@ -34,6 +33,6 @@ class FinalizeAudioItemJob extends Job
      * @return void
      */
     public function handle() {
-        //
+        $this->audioItem->process();
     }
 }
