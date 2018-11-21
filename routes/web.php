@@ -76,29 +76,29 @@ $router->group([
     ]);
 
 });
+*/
 
 $router->group([
-    'prefix'        => 'api/v1/tts',
+    'prefix'        => 'api/v1',
     //'middleware'    => 'auth',
-    'as'            => 'tts.',
 ], function() use ($router) {
 
     // Get available voices
     $router->get('voices', [
         'as'    => 'voices',
-        'uses'  => 'TTSController@getVoices',
+        'uses'  => 'Controller@getVoices',
     ]);
 
     // Get configured SSML replacements.
     $router->get('ssml-replacements', [
-        'as'    => 'ssml.replacements',
-        'uses'  => 'TTSController@getSSMLReplacements',
+        'as'    => 'ssml-replacements',
+        'uses'  => 'Controller@getSSMLReplacements',
     ]);
 
     // Get configured audio output formats.
     $router->get('output-formats', [
-        'as'    => 'output.formats',
-        'uses'  => 'TTSController@getOutputFormats',
+        'as'    => 'output-formats',
+        'uses'  => 'Controller@getOutputFormats',
     ]);
 
 });

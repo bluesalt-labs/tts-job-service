@@ -69,7 +69,7 @@ APP_NAME
 - `text`: **Required**. The text to convert to audio.
 - `voices`: **Required**. can be either a single integer value or an array of integer values.
 - `name`: Optional. Name of the item.
-- `output_format`: Optional. Audio output format. See [TTS output formats](#tts-output-formats) below for options.
+- `output_format`: Optional. Audio output format. See [output formats](#output-formats) below for options.
 
 ```json
 {
@@ -282,9 +282,9 @@ APP_NAME
 ```
 
 
-### `/tts/voices`
+### `/voices`
 > **Request Type:** `GET`   
-> **Route Name:** `tts.voices`   
+> **Route Name:** `voices`   
 > **Description**   
 > Get voices available in the system.
 
@@ -398,9 +398,9 @@ APP_NAME
 ```
 
 
-### `/tts/ssml-replacements`
+### `/ssml-replacements`
 > **Request Type:** `GET`   
-> **Route Name:** `tts.ssml.replacements`   
+> **Route Name:** `ssml-replacements`   
 > **Description**   
 > Get the SSML replacements that will be applied to TTS items. 
 
@@ -424,9 +424,9 @@ APP_NAME
 ```
 
 
-### `/tts/output-formats` {#tts-output-formats}
+### `/output-formats` {#output-formats}
 > **Request Type:** `GET`   
-> **Route Name:** `tts.output.formats`   
+> **Route Name:** `output-formats`   
 > **Description**   
 > Get the audio output formats available.
 
