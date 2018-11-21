@@ -16,6 +16,60 @@ $router->get('/', function() use ($router){
 });
 
 $router->group([
+    'prefix'        => 'api/v1',
+    //'middleware'    => 'auth',
+], function() use ($router) {
+
+    // Get available voices
+    $router->get('voices', [
+        'as'    => 'voices',
+        'uses'  => 'Controller@getVoices',
+    ]);
+
+    // Get configured SSML replacements.
+    $router->get('ssml-replacements', [
+        'as'    => 'ssml-replacements',
+        'uses'  => 'Controller@getSSMLReplacements',
+    ]);
+
+    // Get configured audio output formats.
+    $router->get('output-formats', [
+        'as'    => 'output-formats',
+        'uses'  => 'Controller@getOutputFormats',
+    ]);
+
+});
+
+$router->group([
+    'prefix'        => 'api/v1/request-items',
+    //'middleware'    => 'auth',
+    'as'            => 'request-items.',
+    ], function() use ($router) {
+
+    // List all request items
+    $router->get('/', [
+        'as'    => 'list',
+        'uses'  => 'RequestItemsController@listRequestItems',
+    ]);
+
+    // Create a new RequestItem
+    $router->post('create', [
+        'as'    => 'create',
+        'uses'  => 'RequestItemsController@createRequestItem',
+    ]);
+
+    // Get the status of a RequestItem
+    $router->get('{item_id}/status', [
+        'as'    => 'status',
+        'uses'  => 'RequestItemsController@getRequestItemStatus',
+    ]);
+
+
+
+});
+
+
+$router->group([
     'prefix'        => 'api/v1/items',
     //'middleware'    => 'auth',
     'as'            => 'items.',
@@ -73,32 +127,6 @@ $router->group([
     $router->delete('{item_id}/delete', [
         'as'    => 'delete',
         'uses'  => 'TTSItemController@deleteItem',
-    ]);
-
-});
-*/
-
-$router->group([
-    'prefix'        => 'api/v1',
-    //'middleware'    => 'auth',
-], function() use ($router) {
-
-    // Get available voices
-    $router->get('voices', [
-        'as'    => 'voices',
-        'uses'  => 'Controller@getVoices',
-    ]);
-
-    // Get configured SSML replacements.
-    $router->get('ssml-replacements', [
-        'as'    => 'ssml-replacements',
-        'uses'  => 'Controller@getSSMLReplacements',
-    ]);
-
-    // Get configured audio output formats.
-    $router->get('output-formats', [
-        'as'    => 'output-formats',
-        'uses'  => 'Controller@getOutputFormats',
     ]);
 
 });
