@@ -22,10 +22,11 @@ class RequestItem extends Model
         'text_file', 'voices', 'output_format' /*, 'log_data' */
     ];
 
-    const STATUS_DEFAULT    = 'Created';
-    const STATUS_PENDING    = 'Pending';
-    const STATUS_COMPLETE   = 'Processed';
-    const STATUS_FAILED     = 'Failed';
+    const STATUS_DEFAULT        = 'Created';
+    const STATUS_PENDING        = 'Pending';
+    const STATUS_AWAITING_AUDIO = 'Awaiting Audio Generation';
+    const STATUS_COMPLETE       = 'Processed';
+    const STATUS_FAILED         = 'Failed';
 
     /**
      * The "booting" method of the model.
@@ -126,10 +127,21 @@ class RequestItem extends Model
         // i.e. make sure this hasn't already happened.
         // also, if it's restarted, maybe skip that part of the text and continue?
 
-        $this->updateLogAndStatus(
-            'Process RequestItem initiated...',
-            static::STATUS_PENDING
-        );
+        $this->updateLogAndStatus('Process RequestItem initiated...');
+
+        // If the request is currently being processed, exit
+        if($this->status === static::STATUS_PENDING || $this->status === static::STATUS_AWAITING_AUDIO) {
+            $this->updateLogAndStatus(
+                "Could not generate audio: status is '".$this->status."'",
+                null,
+                'warning'
+            );
+
+            return false;
+        }
+
+        // Set this item's status to pending
+        $this->updateLogAndStatus('Started TextItemPart generation ...', static::STATUS_PENDING);
 
         // get the contents of the text file
         $text = $this->getItemText();
@@ -137,12 +149,14 @@ class RequestItem extends Model
         // Fail if text string is empty
         if( !(strlen($text) > 0) ) {
             $this->updateLogAndStatus(
-                'Item text is empty',
+                'Item text is empty.',
                 static::STATUS_FAILED,
                 'error'
             );
             return false;
         }
+
+        $this->updateLogAndStatus('RequestItem text retrieved. Attempting to split ...');
 
         // Split the text into single request size parts
         $textParts = TextToSpeech::getTextRequestParts($text);
@@ -157,6 +171,9 @@ class RequestItem extends Model
             return false;
         }
 
+        $this->updateLogAndStatus('Text split successfully. Attempting to create TextItemParts ...');
+
+        $tts = new TextToSpeech();
         $textPartIndex = 0;
 
         // Create TextItemPart model for each textPart
@@ -164,37 +181,57 @@ class RequestItem extends Model
             $textItemPart = new TextItemPart([
                 'request_item_id'   => $this->id,
                 'item_index'        => $textPartIndex,
-                'item_content'      => $textPartString,
+                'item_content'      => $tts->textToSSML($textPartString),
             ]);
 
             $textPartSaveSuccess = $textItemPart->save();
 
             if(!$textPartSaveSuccess) {
-                // todo: log error
+                $this->updateLogAndStatus(
+                    "TextItemPart #$textPartIndex could not be created.",
+                    'error',
+                    static::STATUS_FAILED
+                );
+                return false;
             }
 
             // Create the associated AudioItemParts for each requested voice.
             foreach($this->voices as $voice) {
+                $itemIndex = $textItemPart->item_index;
+                $this->updateLogAndStatus("Creating AudioItemPart #$itemIndex for voice '$voice' ...");
+
                 $audioItemPart = new AudioItemPart([
                     'request_item_id'   => $this->id,
-                    'item_index'        => $textItemPart->item_index,
+                    'item_index'        => $itemIndex,
                     'voice'             => $voice,
                 ]);
 
                 $audioPartSaveSuccess = $audioItemPart->save();
 
                 if(!$audioPartSaveSuccess) {
-                    // todo: log error
+                    $this->updateLogAndStatus(
+                        "AudioItemPart #$textPartIndex for voice '$voice' could not be created.",
+                        'error',
+                        static::STATUS_FAILED
+                    );
+                    return false;
                 }
 
+                $this->updateLogAndStatus("AudioItemPart #$audioItemPart created successfully.");
+
+                $this->updateLogAndStatus("Dispatching AudioItemPartJob #$audioItemPart ...");
                 dispatch( new GenerateAudioItemPartJob($audioItemPart) );
             }
 
             $textPartIndex++;
         }
 
+        $audioItemDispatchDelay = $textPartIndex * 5;
+
         // Create and dispatch the AudioItem for each requested voice.
         foreach($this->voices as $voice) {
+            $this->updateLogAndStatus("Creating AudioItem for voice '$voice'...");
+
             $audioItem = new AudioItem([
                 'request_item_id'   => $this->id,
                 'voice'             => $voice,
@@ -203,12 +240,24 @@ class RequestItem extends Model
             $audioItemSaveSuccess = $audioItem->save();
 
             if(!$audioItemSaveSuccess) {
-                // todo: log error
+                $this->updateLogAndStatus(
+                    "AudioItem for voice '$voice' could not be created.",
+                    'error',
+                    static::STATUS_FAILED
+                );
+                return false;
             }
 
-            dispatch( new FinalizeAudioItemJob( $audioItem ))->delay($textPartIndex * 5);
+            $this->updateLogAndStatus("AudioItem for voice '$voice' created successfully.");
+
+            $this->updateLogAndStatus("Dispatching AudioItem for  voice '$voice' with a delay of $audioItemDispatchDelay seconds ...");
+            dispatch( new FinalizeAudioItemJob( $audioItem ))->delay($audioItemDispatchDelay);
         }
 
+        $this->updateLogAndStatus(
+            "RequestItem Text and Audio items created and dispatched. awaiting audio generation.",
+            static::STATUS_AWAITING_AUDIO
+        );
         return true;
     }
 
@@ -417,6 +466,7 @@ class RequestItem extends Model
         switch($setStatusTo) {
             case static::STATUS_DEFAULT:
             case static::STATUS_PENDING:
+            case static::STATUS_AWAITING_AUDIO:
             case static::STATUS_COMPLETE:
             case static::STATUS_FAILED:
                 $this->status = $setStatusTo;

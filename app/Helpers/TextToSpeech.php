@@ -51,7 +51,8 @@ class TextToSpeech
             throw new InvalidArgumentException("Required parameters are missing or invalid");
         }
 
-        $options['Text'] = $this->textToSSML( $options['Text'] );
+        // now completed when creating the TextItemPart.
+        //$options['Text'] = $this->textToSSML( $options['Text'] );
 
         //\Illuminate\Support\Facades\Log::debug($options['Text']);
 
