@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateItemStringPartsTable extends Migration
+class CreateTextItemParts extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateItemStringPartsTable extends Migration
      */
     public function up()
     {
-        Schema::create('request_item_string_parts', function (Blueprint $table) {
+        Schema::create('text_item_parts', function (Blueprint $table) {
             $table->increments('id');
             $table->timestamps();
             $table->integer('item_request_id');
@@ -30,6 +30,6 @@ class CreateItemStringPartsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('request_item_string_parts');
+        Schema::dropIfExists('text_item_parts');
     }
 }

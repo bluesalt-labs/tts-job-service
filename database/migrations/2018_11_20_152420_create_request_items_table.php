@@ -21,9 +21,9 @@ class CreateRequestItemsTable extends Migration
             $table->string('status')->default(\App\Models\RequestItem::STATUS_DEFAULT); // todo;
             $table->string('output_name')->nullable();
             $table->string('text_file');
-            $table->jsonb('voice_ids')->default('[]');
+            $table->jsonb('voices')->default('[]');
             $table->string('output_format')->default(\App\Helpers\TextToSpeech::OUTPUT_FORMAT_DEFAULT);
-            $table->string('status_message')->nullable();
+            $table->jsonb('log_data')->nullable();
         });
     }
 

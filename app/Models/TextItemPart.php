@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
-class RequestItemStringPart extends Model
+class TextItemPart extends Model
 {
-    protected $table = 'tts_items';
+    protected $table = 'text_item_parts';
     protected $fillable = ['unique_id', 'name', 'user_id', 'status', 'text_file', 'audio_file', 'voice_id', 'output_format'];
 
     const STATUS_DEFAULT = 'Created';

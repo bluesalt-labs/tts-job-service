@@ -64,7 +64,11 @@ $router->group([
         'uses'  => 'RequestItemsController@getRequestItemStatus',
     ]);
 
-
+    // Regenerate the RequestItem if possible
+    $router->get('{item_id}/regenerate', [
+        'as'    => 'regenerate',
+        'uses'  => 'RequestItemsController@regenerateRequestItem',
+    ]);
 
 });
 
