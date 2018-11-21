@@ -5,11 +5,12 @@ namespace App\Models;
 use App\Helpers\S3Storage;
 use App\Helpers\TextToSpeech;
 
+use App\Jobs\FinalizeAudioItemJob;
+use App\Jobs\GenerateAudioItemPartJob;
 use App\Jobs\ProcessRequestItemJob;
 use App\Models\TextItemPart;
 use App\Models\AudioItem;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
@@ -115,23 +116,103 @@ class RequestItem extends Model
         return $output;
     }
 
+    /**
+     * Process this RequestItem. Run by \App\Jobs\ProcessRequestItemJob
+     *
+     * @return bool
+     */
     public function process() {
-        // todo
-        // split up the text and create TextItemParts for each part of the text
-
         // todo: check that the items created below don't already exist
-        // foreach($this->voices as $voice) {
-            // create the empty AudioItem
+        // i.e. make sure this hasn't already happened.
+        // also, if it's restarted, maybe skip that part of the text and continue?
 
-            // foreach($this->textItemParts as $textPart) {
-                // create an AudioItemPart and associate it with
-                // the empty AudioItem above, as well as the TextItemPart
-                // Dispatch the AudioItemPart.
-            // }
-        // }
+        $this->updateLogAndStatus(
+            'Process RequestItem initiated...',
+            static::STATUS_PENDING
+        );
 
-        // foreach($voice) { foreach
+        // get the contents of the text file
+        $text = $this->getItemText();
+
+        // Fail if text string is empty
+        if( !(strlen($text) > 0) ) {
+            $this->updateLogAndStatus(
+                'Item text is empty',
+                static::STATUS_FAILED,
+                'error'
+            );
+            return false;
+        }
+
+        // Split the text into single request size parts
+        $textParts = TextToSpeech::getTextRequestParts($text);
+
+        // Fail if an empty array was retrieved
+        if( !(sizeof($textParts) > 0) ) {
+            $this->updateLogAndStatus(
+                'Item text could not be split.',
+                'error',
+                static::STATUS_FAILED
+            );
+            return false;
+        }
+
+        $textPartIndex = 0;
+
+        // Create TextItemPart model for each textPart
+        foreach($textParts as $textPartString) {
+            $textItemPart = new TextItemPart([
+                'request_item_id'   => $this->id,
+                'item_index'        => $textPartIndex,
+                'item_content'      => $textPartString,
+            ]);
+
+            $textPartSaveSuccess = $textItemPart->save();
+
+            if(!$textPartSaveSuccess) {
+                // todo: log error
+            }
+
+            // Create the associated AudioItemParts for each requested voice.
+            foreach($this->voices as $voice) {
+                $audioItemPart = new AudioItemPart([
+                    'request_item_id'   => $this->id,
+                    'item_index'        => $textItemPart->item_index,
+                    'voice'             => $voice,
+                ]);
+
+                $audioPartSaveSuccess = $audioItemPart->save();
+
+                if(!$audioPartSaveSuccess) {
+                    // todo: log error
+                }
+
+                dispatch( new GenerateAudioItemPartJob($audioItemPart) );
+            }
+
+            $textPartIndex++;
+        }
+
+        // Create and dispatch the AudioItem for each requested voice.
+        foreach($this->voices as $voice) {
+            $audioItem = new AudioItem([
+                'request_item_id'   => $this->id,
+                'voice'             => $voice,
+            ]);
+
+            $audioItemSaveSuccess = $audioItem->save();
+
+            if(!$audioItemSaveSuccess) {
+                // todo: log error
+            }
+
+            dispatch( new FinalizeAudioItemJob( $audioItem ))->delay($textPartIndex * 5);
+        }
+
+        return true;
     }
+
+    // todo addVoice() { /* add a new AudioItem, AudioItemParts, and associate with TextItemParts */ }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -320,4 +401,38 @@ class RequestItem extends Model
             }
         }
     }
+
+    /**
+     * Update the log and/or set this RequestItem's status.
+     *
+     * @param string $message
+     * @param null|string $setStatusTo
+     * @param null|string $logType
+     */
+    private function updateLogAndStatus($message, $setStatusTo = null, $logType = null) {
+        // Validate log type or set to default
+        if($logType === null || !RequestItemLog::isValidType($logType)) { $logType = RequestItemLog::getDefaultType(); }
+
+        // Validate and set status
+        switch($setStatusTo) {
+            case static::STATUS_DEFAULT:
+            case static::STATUS_PENDING:
+            case static::STATUS_COMPLETE:
+            case static::STATUS_FAILED:
+                $this->status = $setStatusTo;
+                break;
+            case null:
+                // nothing to do
+                break;
+            default:
+                // Status type is not valid
+                RequestItemLog::warning($this, "Can't set status to '$setStatusTo'");
+        }
+
+        $this->save();
+
+        // Log message
+        RequestItemLog::$logType($this, $message);
+    }
+
 }
