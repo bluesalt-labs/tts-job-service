@@ -8,10 +8,7 @@ use App\Helpers\TextToSpeech;
 use App\Jobs\FinalizeAudioItemJob;
 use App\Jobs\GenerateAudioItemPartJob;
 use App\Jobs\ProcessRequestItemJob;
-use App\Models\TextItemPart;
-use App\Models\AudioItem;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 
 class RequestItem extends Model
@@ -19,13 +16,13 @@ class RequestItem extends Model
     protected $table = 'request_items';
     protected $fillable = [
         'unique_id', 'user_id', 'status', 'output_name',
-        'text_file', 'voices', 'output_format' /*, 'log_data' */
+        'text_file', 'audio_file', 'voices', 'output_format' /*, 'log_data' */
     ];
 
     const STATUS_DEFAULT        = 'Created';
     const STATUS_PENDING        = 'Pending';
     const STATUS_AWAITING_AUDIO = 'Awaiting Audio Generation';
-    const STATUS_COMPLETE       = 'Processed';
+    const STATUS_COMPLETE       = 'Complete';
     const STATUS_FAILED         = 'Failed';
 
     /**
@@ -42,7 +39,7 @@ class RequestItem extends Model
 
         static::saving(function(RequestItem $requestItem) {
             $requestItem->generateTextFilePath();
-            //$ttsItem->generateAudioFilePath();
+            $requestItem->generateAudioFilePath();
         });
 
         static::deleting(function(RequestItem $requestItem) {
@@ -56,12 +53,6 @@ class RequestItem extends Model
             );
 
             if($textFilePath) { $s3->delete($textFilePath); }
-
-            //$audioFilePath  = (
-            //array_key_exists('audio_file', $ttsItem->attributes) ?
-            //    $ttsItem->attributes['audio_file'] : null
-            //);
-            //if($audioFilePath) { $s3->delete($audioFilePath); }
         });
     }
 

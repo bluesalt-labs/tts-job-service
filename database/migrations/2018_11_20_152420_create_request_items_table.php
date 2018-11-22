@@ -18,7 +18,7 @@ class CreateRequestItemsTable extends Migration
             $table->timestamps();
             $table->string('unique_id');
             $table->string('user_id')->nullable();
-            $table->string('status')->default(\App\Models\RequestItem::STATUS_DEFAULT); // todo;
+            $table->string('status')->default(\App\Models\RequestItem::STATUS_DEFAULT);
             $table->string('output_name')->nullable();
             $table->string('text_file');
             $table->jsonb('voices')->default('[]');

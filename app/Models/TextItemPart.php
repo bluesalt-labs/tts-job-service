@@ -22,12 +22,18 @@ class TextItemPart extends Model
         return $this->belongsTo(RequestItem::class);
     }
 
+
     /**
-     * // todo: I mean, does this model care about this?
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * Get the AudioItemPart models associated with this TextItemPart.
+     *
+     * @return array
      */
-    public function audioItemParts() {
-        return $this->belongsToMany(AudioItemPart::class);
+    public function getAudioItemParts() {
+        if($this->requestItem()->exists()) {
+            return $this->requestItem->audioItemParts()->where('item_index', $this->item_index)->get();
+        }
+
+        return [];
     }
 
 }

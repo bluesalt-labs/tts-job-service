@@ -66,4 +66,19 @@ class AudioItem extends Model
         }
     }
 
+    /**
+     * // todo
+     * Generate the audio file path for this model.
+     *
+     * @param bool $force
+     */
+    private function generateAudioFilePath($force = false) {
+        //if( $force ||
+        //    !array_key_exists('audio_file', $this->attributes) ||
+        //    !$this->attributes['audio_file']
+        //) {
+        //    $this->attributes['audio_file'] = 'audio/'.$this->unique_id.'.'.$this->output_format;
+        //}
+    }
+
 }
