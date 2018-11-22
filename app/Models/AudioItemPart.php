@@ -25,7 +25,6 @@ class AudioItemPart extends Model
         return $this->belongsTo(RequestItem::class);
     }
 
-
     /**
      * Get the TextItemPart model associated with this AudioItemPart.
      *
@@ -49,15 +48,17 @@ class AudioItemPart extends Model
 
         if($this->status === static::STATUS_PENDING) {
             $this->updateLogAndStatus(
-                "Count not process AudioFilePart: status is '".$this->status."'",
+                "Count not process AudioItemPart: status is '".$this->status."'",
                 null,
                 'warning'
             );
-
             return false;
         }
 
-        $this->updateLogAndStatus('Started AudioItemPart generation ...', static::STATUS_PENDING);
+        $this->updateLogAndStatus(
+            'Started AudioItemPart #'.$this->item_index.' generation ...',
+            static::STATUS_PENDING
+        );
 
         /** @var TextItemPart $textItemPart */
         $textItemPart = $this->getTextItemPart();
@@ -109,9 +110,14 @@ class AudioItemPart extends Model
      *
      * @return string
      */
-    private function getAudioCacheFilePath() {
-        $filename = intval($this->item_index).'.'.$this->requestItem->output_format;
-        return 'audio/cache/'.$this->requestItem->unique_id.'/'.$filename;
+    public function getAudioCacheFilePath() {
+        if( array_key_exists('audio_file', $this->attributes) || !$this->attributes['audio_file']) {
+            $filename = intval($this->item_index).'.'.$this->requestItem->output_format;
+
+            $this->attributes['audio_file'] = 'audio/cache/'.$this->requestItem->unique_id.'/'.$filename;
+        }
+
+        return $this->attributes['audio_file'];
     }
 
     /**
@@ -149,4 +155,5 @@ class AudioItemPart extends Model
         // Log message
         RequestItemLog::$logType($this, $message);
     }
+
 }
